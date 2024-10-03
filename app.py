@@ -1,5 +1,5 @@
 from flask import Flask, request, jsonify, render_template
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, NavigableString
 import os
 
 app = Flask(__name__)
@@ -12,7 +12,7 @@ def index():
 def extract_text_and_tags():
     data = request.json
     code = data.get('code', '')
-    
+
     if not code:
         return jsonify({'error': '未提供任何程式碼'}), 400
 
@@ -22,8 +22,9 @@ def extract_text_and_tags():
         text_and_tags = []
 
         for element in soup.find_all():
-            if element.string:
-                text_and_tags.append({'tag': element.name, 'text': element.string.strip()})
+            # 只提取可見的文字
+            if isinstance(element, NavigableString) and element.strip():
+                text_and_tags.append({'tag': element.parent.name, 'text': element.strip()})
 
         return jsonify(text_and_tags)
     except Exception as e:
