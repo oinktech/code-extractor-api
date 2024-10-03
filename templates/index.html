@@ -161,7 +161,7 @@
         <div>
             <button id="getTagsButton"><i class="fas fa-tag"></i> 獲取標籤</button>
             <button class="clear-button" id="clearButton"><i class="fas fa-times"></i> 清空</button>
-            <button id="apiButton"><i class="fas fa-book"></i> 使用教程</button> <!-- 新增API按钮 -->
+            <button id="apiButton"><i class="fas fa-book"></i> API 使用教程</button> <!-- 新增API按钮 -->
         </div>
         <div class="loader" id="loader"><i class="fas fa-spinner fa-spin"></i> 處理中...</div>
         <div id="tags"></div>
@@ -173,42 +173,46 @@
         <div class="modal-content">
             <span class="close">&times;</span>
             <h2>API 使用教程</h2>
-            <p>此 API 允許您提取 HTML 代碼中的標籤和文本。以下是如何使用它：</p>
-            <h3>1. 獲取標籤</h3>
-            <p>發送 POST 請求到 <code>/get_tags</code>，內容為 HTML 程式碼。</p>
-            <pre><code>POST /get_tags
-Content-Type: application/json
+            <p>要在您的靜態網站中使用此 API，請按照以下步驟操作：</p>
 
-{
-    "code": "&lt;h1&gt;示例標題&lt;/h1&gt;&lt;p&gt;這是一段文字。&lt;/p&gt;"
-}</code></pre>
-            <p>示例輸出：</p>
-            <pre><code>{
-    "tags": ["h1", "p"]
-}</code></pre>
+            <h3>1. 引入 jQuery</h3>
+            <p>在您的 HTML 文件中引入 jQuery：</p>
+            <pre><code>&lt;script src="https://code.jquery.com/jquery-3.6.0.min.js"&gt;&lt;/script&gt;</code></pre>
 
-            <h3>2. 提取文字和標籤</h3>
-            <p>發送 POST 請求到 <code>/extract</code>，內容為 HTML 程式碼和選擇的標籤。</p>
-            <pre><code>POST /extract
-Content-Type: application/json
-
-{
-    "code": "&lt;h1&gt;示例標題&lt;/h1&gt;&lt;p&gt;這是一段文字。&lt;/p&gt;",
-    "tags": ["h1", "p"]
-}</code></pre>
-            <p>示例輸出：</p>
-            <pre><code>[
-    {
-        "tag": "h1",
-        "text": "示例標題",
-        "placeholder": "無placeholder"
+            <h3>2. 使用 Fetch API 發送請求</h3>
+            <p>以下是如何獲取標籤的範例：</p>
+            <pre><code>$.ajax({
+    url: 'https://your-api-url/get_tags', // 請替換為實際 API 地址
+    type: 'POST',
+    contentType: 'application/json',
+    data: JSON.stringify({ code: '<h1>示例標題</h1><p>這是一段文字。</p>' }),
+    success: function(response) {
+        console.log(response);
     },
-    {
-        "tag": "p",
-        "text": "這是一段文字。",
-        "placeholder": "無placeholder"
+    error: function(error) {
+        console.error('錯誤:', error);
     }
-]</code></pre>
+});</code></pre>
+
+            <h3>3. 提取標籤中的文本</h3>
+            <p>以下是如何提取標籤中的文本的範例：</p>
+            <pre><code>$.ajax({
+    url: 'https://your-api-url/extract', // 請替換為實際 API 地址
+    type: 'POST',
+    contentType: 'application/json',
+    data: JSON.stringify({
+        code: '&lt;h1&gt;示例標題&lt;/h1&gt;&lt;p&gt;這是一段文字。&lt;/p&gt;',
+        tags: ['h1', 'p']
+    }),
+    success: function(response) {
+        console.log(response);
+    },
+    error: function(error) {
+        console.error('錯誤:', error);
+    }
+});</code></pre>
+            <p>這些示例會將標籤及其文本輸出到控制台。</p>
+
             <button class="copy-button" onclick="copyToClipboard()">複製代碼示例</button> <!-- 复制按钮 -->
         </div>
     </div>
@@ -232,22 +236,40 @@ Content-Type: application/json
 
         function copyToClipboard() {
             const tutorialText = `
-1. 獲取標籤
-POST /get_tags
-Content-Type: application/json
+1. 引入 jQuery
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
-{
-    "code": "<h1>示例標題</h1><p>這是一段文字。</p>"
-}
+2. 使用 Fetch API 發送請求
+$.ajax({
+    url: 'https://your-api-url/get_tags', // 請替換為實際 API 地址
+    type: 'POST',
+    contentType: 'application/json',
+    data: JSON.stringify({ code: '<h1>示例標題</h1><p>這是一段文字。</p>' }),
+    success: function(response) {
+        console.log(response);
+    },
+    error: function(error) {
+        console.error('錯誤:', error);
+    }
+});
 
-2. 提取文字和標籤
-POST /extract
-Content-Type: application/json
-
-{
-    "code": "<h1>示例標題</h1><p>這是一段文字。</p>",
-    "tags": ["h1", "p"]
-}`;
+3. 提取標籤中的文本
+$.ajax({
+    url: 'https://your-api-url/extract', // 請替換為實際 API 地址
+    type: 'POST',
+    contentType: 'application/json',
+    data: JSON.stringify({
+        code: '<h1>示例標題</h1><p>這是一段文字。</p>',
+        tags: ['h1', 'p']
+    }),
+    success: function(response) {
+        console.log(response);
+    },
+    error: function(error) {
+        console.error('錯誤:', error);
+    }
+});
+`;
             navigator.clipboard.writeText(tutorialText).then(() => {
                 alert('教學內容已複製到剪貼板！');
             }).catch(err => {
