@@ -16,6 +16,7 @@
         h1 {
             text-align: center;
             color: #007BFF;
+            margin-bottom: 20px;
         }
         .container {
             max-width: 800px;
@@ -38,6 +39,7 @@
             font-size: 16px;
             transition: border-color 0.3s;
             resize: none;
+            font-family: 'Courier New', Courier, monospace;
         }
         textarea:focus {
             border-color: #007BFF;
@@ -53,21 +55,29 @@
             font-size: 16px;
             cursor: pointer;
             transition: background-color 0.3s, transform 0.3s;
+            display: flex;
+            align-items: center;
+        }
+        button i {
+            margin-right: 5px;
         }
         button:hover {
             background-color: #0056b3;
             transform: scale(1.05);
         }
+        button.clear-button {
+            background-color: #dc3545;
+        }
+        button.clear-button:hover {
+            background-color: #c82333;
+        }
         .result-item {
             padding: 10px;
             border-bottom: 1px solid #ddd;
             animation: fadeIn 0.5s;
-        }
-        .clear-button {
-            background-color: #dc3545;
-        }
-        .clear-button:hover {
-            background-color: #c82333;
+            background-color: #f9f9f9;
+            border-radius: 4px;
+            margin-bottom: 10px;
         }
         #results {
             margin-top: 20px;
@@ -85,6 +95,63 @@
             from { opacity: 0; }
             to { opacity: 1; }
         }
+        /* 模态框样式 */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.5);
+            padding-top: 60px;
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 5% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 600px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        }
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        pre {
+            background-color: #f4f4f4;
+            padding: 10px;
+            border-radius: 4px;
+            overflow: auto;
+            font-size: 14px;
+        }
+        .copy-button {
+            background-color: #28a745;
+            margin-top: 10px;
+        }
+        .copy-button:hover {
+            background-color: #218838;
+        }
+        .error-message {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        .success-message {
+            color: #28a745;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
@@ -94,101 +161,132 @@
         <div>
             <button id="getTagsButton"><i class="fas fa-tag"></i> 獲取標籤</button>
             <button class="clear-button" id="clearButton"><i class="fas fa-times"></i> 清空</button>
+            <button id="apiButton"><i class="fas fa-book"></i> 使用教程</button> <!-- 新增API按钮 -->
         </div>
         <div class="loader" id="loader"><i class="fas fa-spinner fa-spin"></i> 處理中...</div>
         <div id="tags"></div>
         <div id="results"></div>
     </div>
 
-    <script>
-        document.getElementById('getTagsButton').addEventListener('click', async () => {
-            const code = document.getElementById('codeInput').value;
-            const loader = document.getElementById('loader');
-            const tagsDiv = document.getElementById('tags');
-            const resultsDiv = document.getElementById('results');
+    <!-- 模态框 -->
+    <div id="apiModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>API 使用教程</h2>
+            <p>此 API 允許您提取 HTML 代碼中的標籤和文本。以下是如何使用它：</p>
+            <h3>1. 獲取標籤</h3>
+            <p>發送 POST 請求到 <code>/get_tags</code>，內容為 HTML 程式碼。</p>
+            <pre><code>POST /get_tags
+Content-Type: application/json
 
-            tagsDiv.innerHTML = '';
-            resultsDiv.innerHTML = '';
-            loader.style.display = 'block';  // 顯示加載動畫
+{
+    "code": "&lt;h1&gt;示例標題&lt;/h1&gt;&lt;p&gt;這是一段文字。&lt;/p&gt;"
+}</code></pre>
+            <p>示例輸出：</p>
+            <pre><code>{
+    "tags": ["h1", "p"]
+}</code></pre>
+
+            <h3>2. 提取文字和標籤</h3>
+            <p>發送 POST 請求到 <code>/extract</code>，內容為 HTML 程式碼和選擇的標籤。</p>
+            <pre><code>POST /extract
+Content-Type: application/json
+
+{
+    "code": "&lt;h1&gt;示例標題&lt;/h1&gt;&lt;p&gt;這是一段文字。&lt;/p&gt;",
+    "tags": ["h1", "p"]
+}</code></pre>
+            <p>示例輸出：</p>
+            <pre><code>[
+    {
+        "tag": "h1",
+        "text": "示例標題",
+        "placeholder": "無placeholder"
+    },
+    {
+        "tag": "p",
+        "text": "這是一段文字。",
+        "placeholder": "無placeholder"
+    }
+]</code></pre>
+            <button class="copy-button" onclick="copyToClipboard()">複製代碼示例</button> <!-- 复制按钮 -->
+        </div>
+    </div>
+
+    <script>
+        // 打开模态框
+        document.getElementById('apiButton').onclick = function() {
+            document.getElementById('apiModal').style.display = "block";
+        }
+
+        // 关闭模态框
+        document.getElementsByClassName('close')[0].onclick = function() {
+            document.getElementById('apiModal').style.display = "none";
+        }
+
+        window.onclick = function(event) {
+            if (event.target == document.getElementById('apiModal')) {
+                document.getElementById('apiModal').style.display = "none";
+            }
+        }
+
+        function copyToClipboard() {
+            const tutorialText = `
+1. 獲取標籤
+POST /get_tags
+Content-Type: application/json
+
+{
+    "code": "<h1>示例標題</h1><p>這是一段文字。</p>"
+}
+
+2. 提取文字和標籤
+POST /extract
+Content-Type: application/json
+
+{
+    "code": "<h1>示例標題</h1><p>這是一段文字。</p>",
+    "tags": ["h1", "p"]
+}`;
+            navigator.clipboard.writeText(tutorialText).then(() => {
+                alert('教學內容已複製到剪貼板！');
+            }).catch(err => {
+                alert('複製失敗！');
+            });
+        }
+
+        const loader = document.getElementById('loader');
+        const resultsDiv = document.getElementById('results');
+
+        document.getElementById('getTagsButton').addEventListener('click', async () => {
+            const codeInput = document.getElementById('codeInput').value;
+            loader.style.display = 'block';  // 显示加载动画
+            resultsDiv.innerHTML = '';  // 清空结果区域
 
             try {
                 const response = await fetch('/get_tags', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ code }),
-                });
-
-                const tags = await response.json();
-                loader.style.display = 'none';  // 隱藏加載動畫
-
-                if (response.ok) {
-                    if (tags.length === 0) {
-                        tagsDiv.innerHTML = '<p>未找到任何標籤。</p>';
-                    } else {
-                        tagsDiv.innerHTML = '<p>選擇要提取的標籤:</p>';
-                        tags.forEach(tag => {
-                            tagsDiv.innerHTML += `<label><input type="checkbox" value="${tag}"> ${tag}</label><br>`;
-                        });
-                        tagsDiv.innerHTML += '<button id="extractButton"><i class="fas fa-extract"></i> 提取所選標籤的文字</button>';
-
-                        // 添加提取按鈕的事件
-                        document.getElementById('extractButton').addEventListener('click', async () => {
-                            const selectedTags = Array.from(document.querySelectorAll('#tags input:checked')).map(input => input.value);
-                            await extractText(selectedTags, code);
-                        });
-                    }
-                } else {
-                    tagsDiv.innerHTML = `<p>錯誤: ${tags.error}</p>`;
-                }
-            } catch (error) {
-                loader.style.display = 'none';  // 隱藏加載動畫
-                resultsDiv.innerHTML = `<p>處理時發生錯誤: ${error.message}</p>`;
-            }
-        });
-
-        async function extractText(selectedTags, code) {
-            const loader = document.getElementById('loader');
-            const resultsDiv = document.getElementById('results');
-
-            resultsDiv.innerHTML = '';
-            loader.style.display = 'block';  // 顯示加載動畫
-
-            try {
-                const response = await fetch('/extract', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ code, tags: selectedTags }),
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ code: codeInput })
                 });
 
                 const results = await response.json();
-                loader.style.display = 'none';  // 隱藏加載動畫
+                loader.style.display = 'none';  // 隐藏加载动画
 
-                if (response.ok) {
-                    if (results.length === 0) {
-                        resultsDiv.innerHTML = '<p>未找到任何文字或標籤。</p>';
-                    } else {
-                        results.forEach(item => {
-                            resultsDiv.innerHTML += `
-                                <div class="result-item">
-                                    <strong>標籤:</strong> ${item.tag}<br>
-                                    <strong>文字:</strong> ${item.text}<br>
-                                    <strong>Placeholder:</strong> ${item.placeholder}<br>
-                                </div>
-                            `;
-                        });
-                    }
+                if (results.tags) {
+                    const tagsDiv = document.getElementById('tags');
+                    tagsDiv.innerHTML = '<h3>提取的標籤：</h3>';
+                    results.tags.forEach(tag => {
+                        tagsDiv.innerHTML += `<label><input type="checkbox" value="${tag}" checked> ${tag}</label><br>`;
+                    });
                 } else {
-                    resultsDiv.innerHTML = `<p>錯誤: ${results.error}</p>`;
+                    resultsDiv.innerHTML = `<p class="error-message">錯誤: ${results.error}</p>`;
                 }
             } catch (error) {
-                loader.style.display = 'none';  // 隱藏加載動畫
-                resultsDiv.innerHTML = `<p>處理時發生錯誤: ${error.message}</p>`;
+                loader.style.display = 'none';  // 隐藏加载动画
+                resultsDiv.innerHTML = `<p class="error-message">處理時發生錯誤: ${error.message}</p>`;
             }
-        }
+        });
 
         document.getElementById('clearButton').addEventListener('click', () => {
             document.getElementById('codeInput').value = '';
