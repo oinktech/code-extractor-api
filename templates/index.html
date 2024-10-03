@@ -1,162 +1,178 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HTML 標籤提取器</title>
+    <title>程式碼提取器</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
+        /* 基础样式和现有代码保持一致 */
         body {
-            font-family: Arial, sans-serif;
-            background-color: #f0f0f0;
-            color: #333;
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f4f4;
             margin: 0;
             padding: 20px;
-            line-height: 1.6;
+            color: #333;
         }
         h1 {
-            color: #007bff;
+            text-align: center;
+            color: #007BFF;
+            margin-bottom: 20px;
         }
-        #container {
+        .container {
             max-width: 800px;
             margin: auto;
-            background: #fff;
+            background: white;
             padding: 20px;
             border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
         }
         textarea {
             width: 100%;
-            height: 150px;
-            border-radius: 5px;
-            border: 1px solid #ccc;
+            height: 200px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
             padding: 10px;
+            font-size: 16px;
             resize: none;
         }
         button {
-            background-color: #007bff;
-            color: white;
-            border: none;
             padding: 10px 15px;
-            border-radius: 5px;
+            margin-top: 10px;
+            border: none;
+            border-radius: 4px;
+            background-color: #007BFF;
+            color: white;
+            font-size: 16px;
             cursor: pointer;
-            transition: background-color 0.3s;
+            display: flex;
+            align-items: center;
         }
-        button:hover {
-            background-color: #0056b3;
+        button i {
+            margin-right: 5px;
         }
-        .tags {
-            margin: 20px 0;
+        .modal {
+            display: none; 
+            position: fixed;
+            z-index: 1; 
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%; 
+            background-color: rgba(0, 0, 0, 0.4);
         }
-        .error-message {
-            color: red;
+        .modal-content {
+            background-color: white;
+            margin: 15% auto; 
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            border-radius: 8px;
         }
-        .loader {
-            display: none;
-            border: 4px solid #f3f3f3; 
-            border-top: 4px solid #3498db; 
-            border-radius: 50%;
-            width: 30px;
-            height: 30px;
-            animation: spin 1s linear infinite;
-            margin: 20px auto;
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
         }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        pre {
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        #copyBtn {
+            background-color: #28a745;
+            margin-top: 10px;
         }
     </style>
 </head>
 <body>
-    <div id="container">
-        <h1>HTML 標籤提取器</h1>
-        <textarea id="codeInput" placeholder="請在這裡輸入您的 HTML 代碼..."></textarea>
-        <button id="getTagsButton">提取標籤</button>
-        <div class="loader" id="loader"></div>
-        <div class="tags" id="tags"></div>
+    <div class="container">
+        <h1>程式碼提取器</h1>
+        <textarea id="codeInput" placeholder="在此處輸入 HTML 程式碼..."></textarea>
+        <div>
+            <button id="getTagsButton"><i class="fas fa-tag"></i> 獲取標籤</button>
+            <button class="clear-button" id="clearButton"><i class="fas fa-times"></i> 清空</button>
+        </div>
+        
+        <!-- 新增的API按鈕 -->
+        <button id="apiBtn"><i class="fas fa-book"></i> API 使用教程</button>
+        
+        <!-- API 教程的模态框 -->
+        <div id="apiModal" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <h2>API 使用教程</h2>
+                <p>請參照以下代碼將此 API 集成到靜態網站：</p>
+                <pre>
+<code>
+fetch('https://code-extractor-api.onrender.com/extract', {
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+        code: '&lt;h1&gt;Example&lt;/h1&gt;&lt;p&gt;This is a paragraph&lt;/p&gt;',
+        tags: ['h1', 'p']
+    }),
+})
+.then(response =&gt; response.json())
+.then(data =&gt; console.log(data))
+.catch(error =&gt; console.error('Error:', error));
+</code>
+                </pre>
+                <button id="copyBtn"><i class="fas fa-copy"></i> 複製程式碼</button>
+                <h3>API 回應格式</h3>
+                <pre>
+<code>
+{
+    "tag": "h1",
+    "text": "Example",
+    "placeholder": "無 placeholder"
+}
+</code>
+                </pre>
+            </div>
+        </div>
+
+        <div id="tags"></div>
         <div id="results"></div>
-        <button id="clearButton">清除</button>
-        <button id="copyExampleButton">複製 API 使用示例</button>
     </div>
 
     <script>
-        document.getElementById('copyExampleButton').addEventListener('click', () => {
-            const exampleText = `
-            // 使用示例
-            // 提取標籤
-            $.ajax({
-                url: 'https://your-api-url/get_tags', // 請替換為實際 API 地址
-                type: 'POST',
-                contentType: 'application/json',
-                data: JSON.stringify({ code: '<h1>示例標題</h1><p>這是一段文字。</p>' }),
-                success: function(response) {
-                    console.log(response);
-                },
-                error: function(error) {
-                    console.error('錯誤:', error);
-                }
-            });
+        // 顯示模態框
+        const modal = document.getElementById("apiModal");
+        const btn = document.getElementById("apiBtn");
+        const span = document.getElementsByClassName("close")[0];
 
-            // 提取標籤中的文本
-            $.ajax({
-                url: 'https://your-api-url/extract', // 請替換為實際 API 地址
-                type: 'POST',
-                contentType: 'application/json',
-                data: JSON.stringify({
-                    code: '<h1>示例標題</h1><p>這是一段文字。</p>',
-                    tags: ['h1', 'p']
-                }),
-                success: function(response) {
-                    console.log(response);
-                },
-                error: function(error) {
-                    console.error('錯誤:', error);
-                }
-            });
-            `;
-            navigator.clipboard.writeText(exampleText).then(() => {
-                alert('API 使用示例已複製到剪貼板！');
-            }).catch(err => {
-                alert('複製失敗！');
-            });
-        });
+        btn.onclick = function() {
+            modal.style.display = "block";
+        }
 
-        const loader = document.getElementById('loader');
-        const resultsDiv = document.getElementById('results');
+        span.onclick = function() {
+            modal.style.display = "none";
+        }
 
-        document.getElementById('getTagsButton').addEventListener('click', async () => {
-            const codeInput = document.getElementById('codeInput').value;
-            loader.style.display = 'block';  // 顯示加載動畫
-            resultsDiv.innerHTML = '';  // 清空結果區域
-
-            try {
-                const response = await fetch('/get_tags', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ code: codeInput })
-                });
-
-                const results = await response.json();
-                loader.style.display = 'none';  // 隱藏加載動畫
-
-                if (results.tags) {
-                    const tagsDiv = document.getElementById('tags');
-                    tagsDiv.innerHTML = '<h3>提取的標籤：</h3>';
-                    results.tags.forEach(tag => {
-                        tagsDiv.innerHTML += `<label><input type="checkbox" value="${tag}" checked> ${tag}</label><br>`;
-                    });
-                } else {
-                    resultsDiv.innerHTML = `<p class="error-message">錯誤: ${results.error}</p>`;
-                }
-            } catch (error) {
-                loader.style.display = 'none';  // 隱藏加載動畫
-                resultsDiv.innerHTML = `<p class="error-message">處理時發生錯誤: ${error.message}</p>`;
+        window.onclick = function(event) {
+            if (event.target == modal) {
+                modal.style.display = "none";
             }
-        });
+        }
 
-        document.getElementById('clearButton').addEventListener('click', () => {
-            document.getElementById('codeInput').value = '';
-            document.getElementById('tags').innerHTML = '';
-            document.getElementById('results').innerHTML = '';
+        // 複製程式碼功能
+        document.getElementById('copyBtn').addEventListener('click', () => {
+            const code = document.querySelector('pre code').innerText;
+            navigator.clipboard.writeText(code).then(() => {
+                alert('程式碼已複製！');
+            }, (err) => {
+                alert('複製失敗，請手動複製。');
+            });
         });
     </script>
 </body>
