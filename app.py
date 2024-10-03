@@ -1,5 +1,5 @@
 from flask import Flask, request, jsonify, render_template
-from bs4 import BeautifulSoup, NavigableString
+from bs4 import BeautifulSoup
 import os
 
 app = Flask(__name__)
@@ -8,23 +8,44 @@ app = Flask(__name__)
 def index():
     return render_template('index.html')
 
-@app.route('/extract', methods=['POST'])
-def extract_text_and_tags():
+@app.route('/get_tags', methods=['POST'])
+def get_tags():
     data = request.json
     code = data.get('code', '')
 
     if not code:
         return jsonify({'error': '未提供任何程式碼'}), 400
 
-    # 使用 BeautifulSoup 提取文字和標籤
+    # 使用 BeautifulSoup 提取所有標籤
+    try:
+        soup = BeautifulSoup(code, 'html.parser')
+        tags = set()
+        for element in soup.find_all(True):  # 查找所有標籤
+            tags.add(element.name)
+
+        return jsonify(list(tags))
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/extract', methods=['POST'])
+def extract_text_and_tags():
+    data = request.json
+    code = data.get('code', '')
+    selected_tags = data.get('tags', [])
+
+    if not code or not selected_tags:
+        return jsonify({'error': '未提供任何程式碼或未選擇標籤'}), 400
+
+    # 使用 BeautifulSoup 提取選定的標籤的文字
     try:
         soup = BeautifulSoup(code, 'html.parser')
         text_and_tags = []
 
-        for element in soup.find_all():
-            # 只提取可見的文字
-            if isinstance(element, NavigableString) and element.strip():
-                text_and_tags.append({'tag': element.parent.name, 'text': element.strip()})
+        for tag in selected_tags:
+            for element in soup.find_all(tag):
+                text = element.get_text(strip=True)
+                if text:  # 確保文本不為空
+                    text_and_tags.append({'tag': tag, 'text': text})
 
         return jsonify(text_and_tags)
     except Exception as e:
