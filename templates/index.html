@@ -68,6 +68,9 @@
             border-top: 1px solid #ddd;
             padding-top: 10px;
         }
+        #tags {
+            margin-top: 20px;
+        }
         .loader {
             display: none;
             text-align: center;
@@ -83,16 +86,63 @@
         <h1>程式碼提取器</h1>
         <textarea id="codeInput" placeholder="在此處輸入 HTML 程式碼..."></textarea>
         <div>
-            <button id="extractButton"><i class="fas fa-extract"></i> 提取文字和標籤</button>
+            <button id="getTagsButton"><i class="fas fa-tag"></i> 獲取標籤</button>
             <button class="clear-button" id="clearButton"><i class="fas fa-times"></i> 清空</button>
         </div>
         <div class="loader" id="loader"><i class="fas fa-spinner fa-spin"></i> 處理中...</div>
+        <div id="tags"></div>
         <div id="results"></div>
     </div>
 
     <script>
-        document.getElementById('extractButton').addEventListener('click', async () => {
+        document.getElementById('getTagsButton').addEventListener('click', async () => {
             const code = document.getElementById('codeInput').value;
+            const loader = document.getElementById('loader');
+            const tagsDiv = document.getElementById('tags');
+            const resultsDiv = document.getElementById('results');
+
+            tagsDiv.innerHTML = '';
+            resultsDiv.innerHTML = '';
+            loader.style.display = 'block';  // 顯示加載動畫
+
+            try {
+                const response = await fetch('/get_tags', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ code }),
+                });
+
+                const tags = await response.json();
+                loader.style.display = 'none';  // 隱藏加載動畫
+
+                if (response.ok) {
+                    if (tags.length === 0) {
+                        tagsDiv.innerHTML = '<p>未找到任何標籤。</p>';
+                    } else {
+                        tagsDiv.innerHTML = '<p>選擇要提取的標籤:</p>';
+                        tags.forEach(tag => {
+                            tagsDiv.innerHTML += `<label><input type="checkbox" value="${tag}"> ${tag}</label><br>`;
+                        });
+                        tagsDiv.innerHTML += '<button id="extractButton"><i class="fas fa-extract"></i> 提取所選標籤的文字</button>';
+
+                        // 添加提取按鈕的事件
+                        document.getElementById('extractButton').addEventListener('click', async () => {
+                            const selectedTags = Array.from(document.querySelectorAll('#tags input:checked')).map(input => input.value);
+                            await extractText(selectedTags, code);
+                        });
+                    }
+                } else {
+                    tagsDiv.innerHTML = `<p>錯誤: ${tags.error}</p>`;
+                }
+            } catch (error) {
+                loader.style.display = 'none';  // 隱藏加載動畫
+                resultsDiv.innerHTML = `<p>處理時發生錯誤: ${error.message}</p>`;
+            }
+        });
+
+        async function extractText(selectedTags, code) {
             const loader = document.getElementById('loader');
             const resultsDiv = document.getElementById('results');
 
@@ -105,7 +155,7 @@
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ code }),
+                    body: JSON.stringify({ code, tags: selectedTags }),
                 });
 
                 const results = await response.json();
@@ -126,10 +176,11 @@
                 loader.style.display = 'none';  // 隱藏加載動畫
                 resultsDiv.innerHTML = `<p>處理時發生錯誤: ${error.message}</p>`;
             }
-        });
+        }
 
         document.getElementById('clearButton').addEventListener('click', () => {
             document.getElementById('codeInput').value = '';
+            document.getElementById('tags').innerHTML = '';
             document.getElementById('results').innerHTML = '';
         });
     </script>
