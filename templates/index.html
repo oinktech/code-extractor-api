@@ -1,289 +1,132 @@
 <!DOCTYPE html>
-<html lang="zh-Hant">
+<html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>程式碼提取器</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <title>HTML 標籤提取器</title>
     <style>
         body {
-            font-family: 'Arial', sans-serif;
-            background-color: #f4f4f4;
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            color: #333;
             margin: 0;
             padding: 20px;
-            color: #333;
+            line-height: 1.6;
         }
         h1 {
-            text-align: center;
-            color: #007BFF;
-            margin-bottom: 20px;
+            color: #007bff;
         }
-        .container {
+        #container {
             max-width: 800px;
             margin: auto;
-            background: white;
+            background: #fff;
             padding: 20px;
             border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            transition: box-shadow 0.3s;
-        }
-        .container:hover {
-            box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
         }
         textarea {
             width: 100%;
-            height: 200px;
-            border-radius: 4px;
-            border: 1px solid #ddd;
+            height: 150px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
             padding: 10px;
-            font-size: 16px;
-            transition: border-color 0.3s;
             resize: none;
-            font-family: 'Courier New', Courier, monospace;
-        }
-        textarea:focus {
-            border-color: #007BFF;
-            outline: none;
         }
         button {
-            padding: 10px 15px;
-            margin-top: 10px;
-            border: none;
-            border-radius: 4px;
-            background-color: #007BFF;
+            background-color: #007bff;
             color: white;
-            font-size: 16px;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
             cursor: pointer;
-            transition: background-color 0.3s, transform 0.3s;
-            display: flex;
-            align-items: center;
-        }
-        button i {
-            margin-right: 5px;
+            transition: background-color 0.3s;
         }
         button:hover {
             background-color: #0056b3;
-            transform: scale(1.05);
         }
-        button.clear-button {
-            background-color: #dc3545;
+        .tags {
+            margin: 20px 0;
         }
-        button.clear-button:hover {
-            background-color: #c82333;
-        }
-        .result-item {
-            padding: 10px;
-            border-bottom: 1px solid #ddd;
-            animation: fadeIn 0.5s;
-            background-color: #f9f9f9;
-            border-radius: 4px;
-            margin-bottom: 10px;
-        }
-        #results {
-            margin-top: 20px;
-            border-top: 1px solid #ddd;
-            padding-top: 10px;
-        }
-        #tags {
-            margin-top: 20px;
+        .error-message {
+            color: red;
         }
         .loader {
             display: none;
-            text-align: center;
+            border: 4px solid #f3f3f3; 
+            border-top: 4px solid #3498db; 
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
         }
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-        /* 模态框样式 */
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 1000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            overflow: auto;
-            background-color: rgba(0,0,0,0.5);
-            padding-top: 60px;
-        }
-        .modal-content {
-            background-color: #fefefe;
-            margin: 5% auto;
-            padding: 20px;
-            border: 1px solid #888;
-            width: 80%;
-            max-width: 600px;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
-        }
-        .close {
-            color: #aaa;
-            float: right;
-            font-size: 28px;
-            font-weight: bold;
-        }
-        .close:hover,
-        .close:focus {
-            color: black;
-            text-decoration: none;
-            cursor: pointer;
-        }
-        pre {
-            background-color: #f4f4f4;
-            padding: 10px;
-            border-radius: 4px;
-            overflow: auto;
-            font-size: 14px;
-        }
-        .copy-button {
-            background-color: #28a745;
-            margin-top: 10px;
-        }
-        .copy-button:hover {
-            background-color: #218838;
-        }
-        .error-message {
-            color: #dc3545;
-            font-weight: bold;
-        }
-        .success-message {
-            color: #28a745;
-            font-weight: bold;
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>程式碼提取器</h1>
-        <textarea id="codeInput" placeholder="在此處輸入 HTML 程式碼..."></textarea>
-        <div>
-            <button id="getTagsButton"><i class="fas fa-tag"></i> 獲取標籤</button>
-            <button class="clear-button" id="clearButton"><i class="fas fa-times"></i> 清空</button>
-            <button id="apiButton"><i class="fas fa-book"></i> API 使用教程</button> <!-- 新增API按钮 -->
-        </div>
-        <div class="loader" id="loader"><i class="fas fa-spinner fa-spin"></i> 處理中...</div>
-        <div id="tags"></div>
+    <div id="container">
+        <h1>HTML 標籤提取器</h1>
+        <textarea id="codeInput" placeholder="請在這裡輸入您的 HTML 代碼..."></textarea>
+        <button id="getTagsButton">提取標籤</button>
+        <div class="loader" id="loader"></div>
+        <div class="tags" id="tags"></div>
         <div id="results"></div>
-    </div>
-
-    <!-- 模态框 -->
-    <div id="apiModal" class="modal">
-        <div class="modal-content">
-            <span class="close">&times;</span>
-            <h2>API 使用教程</h2>
-            <p>要在您的靜態網站中使用此 API，請按照以下步驟操作：</p>
-
-            <h3>1. 引入 jQuery</h3>
-            <p>在您的 HTML 文件中引入 jQuery：</p>
-            <pre><code>&lt;script src="https://code.jquery.com/jquery-3.6.0.min.js"&gt;&lt;/script&gt;</code></pre>
-
-            <h3>2. 使用 Fetch API 發送請求</h3>
-            <p>以下是如何獲取標籤的範例：</p>
-            <pre><code>$.ajax({
-    url: 'https://your-api-url/get_tags', // 請替換為實際 API 地址
-    type: 'POST',
-    contentType: 'application/json',
-    data: JSON.stringify({ code: '<h1>示例標題</h1><p>這是一段文字。</p>' }),
-    success: function(response) {
-        console.log(response);
-    },
-    error: function(error) {
-        console.error('錯誤:', error);
-    }
-});</code></pre>
-
-            <h3>3. 提取標籤中的文本</h3>
-            <p>以下是如何提取標籤中的文本的範例：</p>
-            <pre><code>$.ajax({
-    url: 'https://your-api-url/extract', // 請替換為實際 API 地址
-    type: 'POST',
-    contentType: 'application/json',
-    data: JSON.stringify({
-        code: '&lt;h1&gt;示例標題&lt;/h1&gt;&lt;p&gt;這是一段文字。&lt;/p&gt;',
-        tags: ['h1', 'p']
-    }),
-    success: function(response) {
-        console.log(response);
-    },
-    error: function(error) {
-        console.error('錯誤:', error);
-    }
-});</code></pre>
-            <p>這些示例會將標籤及其文本輸出到控制台。</p>
-
-            <button class="copy-button" onclick="copyToClipboard()">複製代碼示例</button> <!-- 复制按钮 -->
-        </div>
+        <button id="clearButton">清除</button>
+        <button id="copyExampleButton">複製 API 使用示例</button>
     </div>
 
     <script>
-        // 打开模态框
-        document.getElementById('apiButton').onclick = function() {
-            document.getElementById('apiModal').style.display = "block";
-        }
+        document.getElementById('copyExampleButton').addEventListener('click', () => {
+            const exampleText = `
+            // 使用示例
+            // 提取標籤
+            $.ajax({
+                url: 'https://your-api-url/get_tags', // 請替換為實際 API 地址
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ code: '<h1>示例標題</h1><p>這是一段文字。</p>' }),
+                success: function(response) {
+                    console.log(response);
+                },
+                error: function(error) {
+                    console.error('錯誤:', error);
+                }
+            });
 
-        // 关闭模态框
-        document.getElementsByClassName('close')[0].onclick = function() {
-            document.getElementById('apiModal').style.display = "none";
-        }
-
-        window.onclick = function(event) {
-            if (event.target == document.getElementById('apiModal')) {
-                document.getElementById('apiModal').style.display = "none";
-            }
-        }
-
-        function copyToClipboard() {
-            const tutorialText = `
-1. 引入 jQuery
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-
-2. 使用 Fetch API 發送請求
-$.ajax({
-    url: 'https://your-api-url/get_tags', // 請替換為實際 API 地址
-    type: 'POST',
-    contentType: 'application/json',
-    data: JSON.stringify({ code: '<h1>示例標題</h1><p>這是一段文字。</p>' }),
-    success: function(response) {
-        console.log(response);
-    },
-    error: function(error) {
-        console.error('錯誤:', error);
-    }
-});
-
-3. 提取標籤中的文本
-$.ajax({
-    url: 'https://your-api-url/extract', // 請替換為實際 API 地址
-    type: 'POST',
-    contentType: 'application/json',
-    data: JSON.stringify({
-        code: '<h1>示例標題</h1><p>這是一段文字。</p>',
-        tags: ['h1', 'p']
-    }),
-    success: function(response) {
-        console.log(response);
-    },
-    error: function(error) {
-        console.error('錯誤:', error);
-    }
-});
-`;
-            navigator.clipboard.writeText(tutorialText).then(() => {
-                alert('教學內容已複製到剪貼板！');
+            // 提取標籤中的文本
+            $.ajax({
+                url: 'https://your-api-url/extract', // 請替換為實際 API 地址
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    code: '<h1>示例標題</h1><p>這是一段文字。</p>',
+                    tags: ['h1', 'p']
+                }),
+                success: function(response) {
+                    console.log(response);
+                },
+                error: function(error) {
+                    console.error('錯誤:', error);
+                }
+            });
+            `;
+            navigator.clipboard.writeText(exampleText).then(() => {
+                alert('API 使用示例已複製到剪貼板！');
             }).catch(err => {
                 alert('複製失敗！');
             });
-        }
+        });
 
         const loader = document.getElementById('loader');
         const resultsDiv = document.getElementById('results');
 
         document.getElementById('getTagsButton').addEventListener('click', async () => {
             const codeInput = document.getElementById('codeInput').value;
-            loader.style.display = 'block';  // 显示加载动画
-            resultsDiv.innerHTML = '';  // 清空结果区域
+            loader.style.display = 'block';  // 顯示加載動畫
+            resultsDiv.innerHTML = '';  // 清空結果區域
 
             try {
                 const response = await fetch('/get_tags', {
@@ -293,7 +136,7 @@ $.ajax({
                 });
 
                 const results = await response.json();
-                loader.style.display = 'none';  // 隐藏加载动画
+                loader.style.display = 'none';  // 隱藏加載動畫
 
                 if (results.tags) {
                     const tagsDiv = document.getElementById('tags');
@@ -305,7 +148,7 @@ $.ajax({
                     resultsDiv.innerHTML = `<p class="error-message">錯誤: ${results.error}</p>`;
                 }
             } catch (error) {
-                loader.style.display = 'none';  // 隐藏加载动画
+                loader.style.display = 'none';  // 隱藏加載動畫
                 resultsDiv.innerHTML = `<p class="error-message">處理時發生錯誤: ${error.message}</p>`;
             }
         });
